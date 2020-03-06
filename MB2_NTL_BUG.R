@@ -22,12 +22,12 @@ library(tidyverse)
 #Ingest data----
 
 #Create paths
-path_2014 <- "D:/MB2_DATA/201401_201412"
-path_2015 <- "D:/MB2_DATA/201501_201512"
-path_2016 <- "D:/MB2_DATA/201601_201612"
-path_2017 <- "D:/MB2_DATA/201701_201712"
-path_2018 <- "D:/MB2_DATA/201801_201812(NA06)"
-path_2019 <- "D:/MB2_DATA/201901_201904"
+path_2014 <- "D:/MB2_DATA/201401_201412/"
+path_2015 <- "D:/MB2_DATA/201501_201512/"
+path_2016 <- "D:/MB2_DATA/201601_201612/"
+path_2017 <- "D:/MB2_DATA/201701_201712/"
+path_2018 <- "D:/MB2_DATA/201801_201812(NA06)/"
+path_2019 <- "D:/MB2_DATA/201901_201904/"
 
 #GREP vcmslcfg avg.rade9h
 avg_rade_2014 <- grep("*avg.rade9h", list.files(path=path_2014, pattern="*avg.rade9h.tif$"), value=TRUE)
@@ -50,5 +50,11 @@ tif_2019 <- paste0(path_2019, avg_rade_2019)
 ############
 
 #Create raster stack & mask----
+tif_2014 = lapply(tif_2014, raster)
+tif_2015 = lapply(tif_2015, raster)
+tif_2016 = lapply(tif_2015, raster)
+tif_2017 = lapply(tif_2017, raster)                  
+tif_2018 = lapply(tif_2018, raster)
+tif_2019 = lapply(tif_2019, raster)
 
-avg_rade_2014 <- raster(tif_2014[1:12], layer=tif_2014[1:12])
+

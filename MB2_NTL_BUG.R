@@ -50,11 +50,33 @@ tif_2019 <- paste0(path_2019, avg_rade_2019)
 ############
 
 #Create raster stack & mask----
-tif_2014 = lapply(tif_2014, raster)
-tif_2015 = lapply(tif_2015, raster)
-tif_2016 = lapply(tif_2015, raster)
-tif_2017 = lapply(tif_2017, raster)                  
-tif_2018 = lapply(tif_2018, raster)
-tif_2019 = lapply(tif_2019, raster)
+tif_2014 = lapply(tif_2014[], raster)
+tif_2015 = lapply(tif_2015[], raster)
+tif_2016 = lapply(tif_2015[], raster)
+tif_2017 = lapply(tif_2017[], raster)                  
+tif_2018 = lapply(tif_2018[], raster)
+tif_2019 = lapply(tif_2019[], raster)
 
+stack_2014 <- stack(tif_2014[1:length(tif_2014)])
+stack_2015 <- stack(tif_2015[1:length(tif_2015)])
+stack_2016 <- stack(tif_2016[1:length(tif_2016)])
+stack_2017 <- stack(tif_2017[1:length(tif_2017)])
+stack_2018 <- stack(tif_2018[1:length(tif_2018)])
+stack_2019 <- stack(tif_2019[1:length(tif_2019)])
 
+#Check by plotting stack_2019
+gplot(stack_2019)+
+  geom_raster(aes(x=x, y=y, fill=value))+
+  scale_fill_viridis_c()+
+  facet_wrap(~variable)+
+  coord_quickmap()+
+  ggtitle("Europe_NTL_2019(Jan-Apr)")+
+  xlab("Longitude")+
+  ylab("Latitude")+
+  theme_classic()+
+  theme(text = element_text(size=20),
+        axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme(plot.title = element_text(hjust = 0.5))
+
+#Insert mask
+Bug_MASK <- shapefile("D:/MB2_DATA/Bulgaria4326.shp")

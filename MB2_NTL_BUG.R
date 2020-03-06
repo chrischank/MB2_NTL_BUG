@@ -14,6 +14,8 @@ library(sp)
 library(viridis)
 library(rasterVis)
 library(tidyverse)
+library(caret)
+library(dbscan)
 
 ################
 #PRE-PROCESSING#
@@ -52,7 +54,7 @@ tif_2019 <- paste0(path_2019, avg_rade_2019)
 #Create raster stack & mask----
 tif_2014 = lapply(tif_2014[], raster)
 tif_2015 = lapply(tif_2015[], raster)
-tif_2016 = lapply(tif_2015[], raster)
+tif_2016 = lapply(tif_2016[], raster)
 tif_2017 = lapply(tif_2017[], raster)                  
 tif_2018 = lapply(tif_2018[], raster)
 tif_2019 = lapply(tif_2019[], raster)
@@ -78,5 +80,56 @@ gplot(stack_2019)+
         axis.text.x = element_text(angle = 90, hjust = 1)) +
   theme(plot.title = element_text(hjust = 0.5))
 
-#Insert mask
+#Read mask
 Bug_MASK <- shapefile("D:/MB2_DATA/Bulgaria4326.shp")
+compareCRS(tif_2019[[1]], Bug_MASK)
+
+#MASKING----
+BUG_Masked_2014 <- crop(stack_2014, Bug_MASK)
+setwd("D:/MB2_DATA/201401_201412/Masked")
+writeRaster(BUG_Masked_2014, filename=names(BUG_Masked_2014), bylayer=TRUE, format="GTiff", datatype="INT2S")
+
+BUG_Masked_2015 <- crop(stack_2015, Bug_MASK)
+setwd("D:/MB2_DATA/201501_201512/Masked")
+writeRaster(BUG_Masked_2015, filename=names(BUG_Masked_2015), bylayer=TRUE, format="GTiff", datatype="INT2S")
+
+BUG_Masked_2016 <- crop(stack_2016, Bug_MASK)
+setwd("D:/MB2_DATA/201601_201612/Masked")
+writeRaster(BUG_Masked_2016, filename=names(BUG_Masked_2016), bylayer=TRUE, format="GTiff", datatype="INT2S")
+
+BUG_Masked_2017 <- crop(stack_2017, Bug_MASK)
+setwd("D:/MB2_DATA/201701_201712/Masked")
+writeRaster(BUG_Masked_2017, filename=names(BUG_Masked_2017), bylayer=TRUE, format="GTiff", datatype="INT2S")
+
+BUG_Masked_2018 <- crop(stack_2018, Bug_MASK)
+setwd("D:/MB2_DATA/201801_201812(NA06)/Masked")
+writeRaster(BUG_Masked_2018, filename=names(BUG_Masked_2018), bylayer=TRUE, format="GTiff", datatype="INT2S")
+
+BUG_Masked_2019 <- crop(stack_2019, Bug_MASK)
+setwd("D:/MB2_DATA/201901_201904/Masked")
+writeRaster(BUG_Masked_2019, filename=names(BUG_Masked_2019), bylayer=TRUE, format="GTiff", datatype="INT2S")
+
+setwd("D:/MB2_DATA")
+
+#Check by plotting
+gplot(BUG_Masked_2019)+
+  geom_raster(aes(x=x, y=y, fill=value))+
+  scale_fill_viridis_c()+
+  facet_wrap(~variable)+
+  coord_quickmap()+
+  ggtitle("Bulgaria_NTL_2019(Jan-Apr)")+
+  xlab("Longitude")+
+  ylab("Latitude")+
+  theme_classic()+
+  theme(text = element_text(size=20),
+        axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggsave("Bulgaria NTL 2019(Jan-Apr).png", scale=1.5, dpi=300)
+
+############
+#CLUSTERING#
+############
+
+#Create the clusters ROIs using 201401
+ROI_Clusters <- optics(BUG_Masked_2014$SVDNB_npp_20140101.20140131_75N060W_vcmslcfg_v10_c2015006171539.avg_rade9h, eps=)

@@ -11,13 +11,13 @@ setwd("D:/MB2_DATA")
 library(RStoolbox)
 library(raster)
 library(sp)
+library(shapefiles)
 library(viridis)
 library(rasterVis)
 library(tidyverse)
-library(caret)
-library(shapefiles)
 library(rgdal)
 library(spdep)
+library(glcm)
 
 ################
 #PRE-PROCESSING#
@@ -146,12 +146,12 @@ plot(NTL_ROI_BUG)
 writeOGR(NTL_ROI_BUG,"D:/MB2_DATA", "NTL_ROI_BUG", driver="ESRI Shapefile", overwrite=TRUE)
 
 #Cropping stacks of ONLY NTL for analysis
-BUGNTL_masked_2014 <- crop(BUG_Masked_2014, NTL_ROI_BUG)
-BUGNTL_masked_2015 <- crop(BUG_Masked_2015, NTL_ROI_BUG)
-BUGNTL_masked_2016 <- crop(BUG_Masked_2016, NTL_ROI_BUG)
-BUGNTL_masked_2017 <- crop(BUG_Masked_2017, NTL_ROI_BUG)
-BUGNTL_masked_2018 <- crop(BUG_Masked_2018, NTL_ROI_BUG)
-BUGNTL_masked_2019 <- crop(BUG_Masked_2019, NTL_ROI_BUG)
+BUGNTL_masked_2014 <- stack(crop(BUG_Masked_2014, NTL_ROI_BUG))
+BUGNTL_masked_2015 <- stack(crop(BUG_Masked_2015, NTL_ROI_BUG))
+BUGNTL_masked_2016 <- stack(crop(BUG_Masked_2016, NTL_ROI_BUG))
+BUGNTL_masked_2017 <- stack(crop(BUG_Masked_2017, NTL_ROI_BUG))
+BUGNTL_masked_2018 <- stack(crop(BUG_Masked_2018, NTL_ROI_BUG))
+BUGNTL_masked_2019 <- stack(crop(BUG_Masked_2019, NTL_ROI_BUG))
 
 #Plot comparison between BUG_Masked_2019 & BUGNTL_Maksed_2019
 par(mfrow=c(1, 2))
@@ -162,27 +162,32 @@ plot(BUGNTL_masked_2019$SVDNB_npp_20190401.20190430_75N060W_vcmslcfg_v10_c201905
 #ANALYSES#
 ##########
 
+BUGNTL_masked_list <- list(BUGNTL_masked_2014, BUGNTL_masked_2015, BUGNTL_masked_2016, BUGNTL_masked_2017, BUGNTL_masked_2018, BUGNTL_masked_2019)
+
 #Calculate Moran's I & Homogeneity for month----
 
 #Create empty data.frame to populate
 
-SpaAut_Tex <- tibble(
+SpaAut_Rad <- tibble(
   "Month"=list(),
-  "Moran's I"=list(),
-  "Homogeneity"=list()
+  "Mean_rad"=list(),
+  "Moran_I"=list(),
+  "St.dev"=list(),
 )
 
-#Populate Moran's I
+#Populate Mean_rad
+SpaAut_Rad$Mean_rad <- mean(BUGNTL_masked_2014[])
 
-SpaAut_Tex$`Moran's I` <- lapply(BUGNTL_masked_2014[], moran(BUGNTL_masked_2014[], ))
+#Populate Moran's I
+SpaAut_Tex$Moran_I <- lapply(BUGNTL_masked_2014[], moran(BUGNTL_masked_2014[], ))
 
 #Multidate LCC of BUG_Masked in City_ROI_Bug----
 
 #Create empty data.frame to populte
-Multimonth_NTLCC <- tibble(
+Multimonth_NTLC <- tibble(
   "Month_range"=list(),
-  "Delta_MD"=list(),
-  "Delta_Moran's I"=list(),
+  "Delta_Mean"=list(),
+  "Delta_Moran_I"=list(),
   "Delta_Homogeneity"=list()
 )
 

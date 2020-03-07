@@ -145,7 +145,7 @@ compareCRS(BUG_Masked_2014, NTL_ROI_BUG)
 plot(NTL_ROI_BUG)
 writeOGR(NTL_ROI_BUG,"D:/MB2_DATA", "NTL_ROI_BUG", driver="ESRI Shapefile", overwrite=TRUE)
 
-#Create stacks of ONLY NTL for analysis
+#Cropping stacks of ONLY NTL for analysis
 BUGNTL_masked_2014 <- crop(BUG_Masked_2014, NTL_ROI_BUG)
 BUGNTL_masked_2015 <- crop(BUG_Masked_2015, NTL_ROI_BUG)
 BUGNTL_masked_2016 <- crop(BUG_Masked_2016, NTL_ROI_BUG)
@@ -153,18 +153,10 @@ BUGNTL_masked_2017 <- crop(BUG_Masked_2017, NTL_ROI_BUG)
 BUGNTL_masked_2018 <- crop(BUG_Masked_2018, NTL_ROI_BUG)
 BUGNTL_masked_2019 <- crop(BUG_Masked_2019, NTL_ROI_BUG)
 
-gplot(BUGNTL_masked_2019)+
-  geom_raster(aes(x=x, y=y, fill=value))+
-  scale_fill_viridis_c()+
-  facet_wrap(~variable)+
-  coord_quickmap()+
-  ggtitle("BUGNTL_Masked_2019(Jan-Apr)")+
-  xlab("Longitude")+
-  ylab("Latitude")+
-  theme_classic()+
-  theme(text = element_text(size=20),
-        axis.text.x = element_text(angle = 90, hjust = 1)) +
-  theme(plot.title = element_text(hjust = 0.5))
+#Plot comparison between BUG_Masked_2019 & BUGNTL_Maksed_2019
+par(mfrow=c(1, 2))
+plot(BUG_Masked_2019$SVDNB_npp_20190401.20190430_75N060W_vcmslcfg_v10_c201905191000.avg_rade9h, main="BulgariaNTL_201904", col=viridis_pal(option = "D")(10))
+plot(BUGNTL_masked_2019$SVDNB_npp_20190401.20190430_75N060W_vcmslcfg_v10_c201905191000.avg_rade9h, main="BUGNTL_Masked_201904", col=viridis_pal(option = "D")(10))
 
 ##########
 #ANALYSES#
@@ -182,7 +174,7 @@ SpaAut_Tex <- tibble(
 
 #Populate Moran's I
 
-SpaAut_Tex$`Moran's I` <- lapply(BUGNTL_masked_2014, )
+SpaAut_Tex$`Moran's I` <- lapply(BUGNTL_masked_2014[], moran(BUGNTL_masked_2014[], ))
 
 #Multidate LCC of BUG_Masked in City_ROI_Bug----
 

@@ -5,7 +5,7 @@
 #Date                                                                #
 ######################################################################
 
-setwd("C:/Users/s1526/Dropbox/MB2_IPG(s382722)/MB2_NTL_BUG")
+setwd("D:/MB2_DATA")
 
 #Libraries----
 library(RStoolbox)
@@ -15,7 +15,9 @@ library(viridis)
 library(rasterVis)
 library(tidyverse)
 library(caret)
-library(dbscan)
+library(shapefiles)
+library(rgdal)
+library(spdep)
 
 ################
 #PRE-PROCESSING#
@@ -87,27 +89,27 @@ compareCRS(tif_2019[[1]], Bug_MASK)
 #MASKING----
 BUG_Masked_2014 <- crop(stack_2014, Bug_MASK)
 setwd("D:/MB2_DATA/201401_201412/Masked")
-writeRaster(BUG_Masked_2014, filename=names(BUG_Masked_2014), bylayer=TRUE, format="GTiff", datatype="INT2S")
+writeRaster(BUG_Masked_2014, filename=names(BUG_Masked_2014), bylayer=TRUE, format="GTiff", datatype="INT2S", overwrite=TRUE)
 
 BUG_Masked_2015 <- crop(stack_2015, Bug_MASK)
 setwd("D:/MB2_DATA/201501_201512/Masked")
-writeRaster(BUG_Masked_2015, filename=names(BUG_Masked_2015), bylayer=TRUE, format="GTiff", datatype="INT2S")
+writeRaster(BUG_Masked_2015, filename=names(BUG_Masked_2015), bylayer=TRUE, format="GTiff", datatype="INT2S", overwrite=TRUE)
 
 BUG_Masked_2016 <- crop(stack_2016, Bug_MASK)
 setwd("D:/MB2_DATA/201601_201612/Masked")
-writeRaster(BUG_Masked_2016, filename=names(BUG_Masked_2016), bylayer=TRUE, format="GTiff", datatype="INT2S")
+writeRaster(BUG_Masked_2016, filename=names(BUG_Masked_2016), bylayer=TRUE, format="GTiff", datatype="INT2S", overwrite=TRUE)
 
 BUG_Masked_2017 <- crop(stack_2017, Bug_MASK)
 setwd("D:/MB2_DATA/201701_201712/Masked")
-writeRaster(BUG_Masked_2017, filename=names(BUG_Masked_2017), bylayer=TRUE, format="GTiff", datatype="INT2S")
+writeRaster(BUG_Masked_2017, filename=names(BUG_Masked_2017), bylayer=TRUE, format="GTiff", datatype="INT2S", overwrite=TRUE)
 
 BUG_Masked_2018 <- crop(stack_2018, Bug_MASK)
 setwd("D:/MB2_DATA/201801_201812(NA06)/Masked")
-writeRaster(BUG_Masked_2018, filename=names(BUG_Masked_2018), bylayer=TRUE, format="GTiff", datatype="INT2S")
+writeRaster(BUG_Masked_2018, filename=names(BUG_Masked_2018), bylayer=TRUE, format="GTiff", datatype="INT2S", overwrite=TRUE)
 
 BUG_Masked_2019 <- crop(stack_2019, Bug_MASK)
 setwd("D:/MB2_DATA/201901_201904/Masked")
-writeRaster(BUG_Masked_2019, filename=names(BUG_Masked_2019), bylayer=TRUE, format="GTiff", datatype="INT2S")
+writeRaster(BUG_Masked_2019, filename=names(BUG_Masked_2019), bylayer=TRUE, format="GTiff", datatype="INT2S", overwrite=TRUE)
 
 setwd("D:/MB2_DATA")
 
@@ -125,11 +127,72 @@ gplot(BUG_Masked_2019)+
         axis.text.x = element_text(angle = 90, hjust = 1)) +
   theme(plot.title = element_text(hjust = 0.5))
 
-ggsave("Bulgaria NTL 2019(Jan-Apr).png", scale=1.5, dpi=300)
+ggsave("Bulgaria NTL 2019(Jan-Apr).png", scale=1.5, dpi=300, overwrite=TRUE)
 
-############
-#CLUSTERING#
-############
+#Clustering ROIs----
 
 #Create the clusters ROIs using 201401
-ROI_Clusters <- optics(BUG_Masked_2014$SVDNB_npp_20140101.20140131_75N060W_vcmslcfg_v10_c2015006171539.avg_rade9h, eps=)
+#First make a copy of 201401 where 0=NA
+sample_201401 <- BUG_Masked_2014$SVDNB_npp_20140101.20140131_75N060W_vcmslcfg_v10_c2015006171539.avg_rade9h
+sample_201401[sample_201401 == 0] <- NA
+
+#KMeans to 2 classes (High lights & Low lights)
+ROI_clusters <- unsuperClass(na.omit(sample_201401), nClasses=2, nStarts=5, nIter=500, norm=FALSE, algorithm="Lloyd")
+plot(ROI_clusters$map)
+
+NTL_ROI_BUG <- rasterToPolygons(ROI_clusters$map, fun=function(x) (x==2), n=16, na.rm=TRUE, dissolve=TRUE)
+compareCRS(BUG_Masked_2014, NTL_ROI_BUG)
+plot(NTL_ROI_BUG)
+writeOGR(NTL_ROI_BUG,"D:/MB2_DATA", "NTL_ROI_BUG", driver="ESRI Shapefile", overwrite=TRUE)
+
+#Create stacks of ONLY NTL for analysis
+BUGNTL_masked_2014 <- crop(BUG_Masked_2014, NTL_ROI_BUG)
+BUGNTL_masked_2015 <- crop(BUG_Masked_2015, NTL_ROI_BUG)
+BUGNTL_masked_2016 <- crop(BUG_Masked_2016, NTL_ROI_BUG)
+BUGNTL_masked_2017 <- crop(BUG_Masked_2017, NTL_ROI_BUG)
+BUGNTL_masked_2018 <- crop(BUG_Masked_2018, NTL_ROI_BUG)
+BUGNTL_masked_2019 <- crop(BUG_Masked_2019, NTL_ROI_BUG)
+
+gplot(BUGNTL_masked_2019)+
+  geom_raster(aes(x=x, y=y, fill=value))+
+  scale_fill_viridis_c()+
+  facet_wrap(~variable)+
+  coord_quickmap()+
+  ggtitle("BUGNTL_Masked_2019(Jan-Apr)")+
+  xlab("Longitude")+
+  ylab("Latitude")+
+  theme_classic()+
+  theme(text = element_text(size=20),
+        axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme(plot.title = element_text(hjust = 0.5))
+
+##########
+#ANALYSES#
+##########
+
+#Calculate Moran's I & Homogeneity for month----
+
+#Create empty data.frame to populate
+
+SpaAut_Tex <- tibble(
+  "Month"=list(),
+  "Moran's I"=list(),
+  "Homogeneity"=list()
+)
+
+#Populate Moran's I
+
+SpaAut_Tex$`Moran's I` <- lapply(BUGNTL_masked_2014, )
+
+#Multidate LCC of BUG_Masked in City_ROI_Bug----
+
+#Create empty data.frame to populte
+Multimonth_NTLCC <- tibble(
+  "Month_range"=list(),
+  "Delta_MD"=list(),
+  "Delta_Moran's I"=list(),
+  "Delta_Homogeneity"=list()
+)
+
+#Calculate Delta_MD (Change in monthly multi-date)
+

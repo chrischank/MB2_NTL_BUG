@@ -16,8 +16,7 @@ library(viridis)
 library(rasterVis)
 library(tidyverse)
 library(rgdal)
-library(spdep)
-library(glcm)
+library(lubridate)
 
 ################
 #PRE-PROCESSING#
@@ -162,33 +161,65 @@ plot(BUGNTL_masked_2019$SVDNB_npp_20190401.20190430_75N060W_vcmslcfg_v10_c201905
 #ANALYSES#
 ##########
 
-BUGNTL_masked_list <- list(BUGNTL_masked_2014, BUGNTL_masked_2015, BUGNTL_masked_2016, BUGNTL_masked_2017, BUGNTL_masked_2018, BUGNTL_masked_2019)
-
 #Calculate Moran's I & Homogeneity for month----
+
+list.BUGNTL <- c(BUGNTL_masked_2014, BUGNTL_masked_2015, BUGNTL_masked_2016, BUGNTL_masked_2017, BUGNTL_masked_2018, BUGNTL_masked_2019)
 
 #Create empty data.frame to populate
 
 SpaAut_Rad <- tibble(
-  "Month"=list(),
-  "Mean_rad"=list(),
-  "Moran_I"=list(),
-  "St.dev"=list(),
+  "Month"=(1:63),
+  "Mean_rad"=(1:63),
+  "Moran_I"=(1:63),
+  "St.dev"=(1:63),
 )
 
+#Populate month
+month_2014 <- grep("*2014", list.BUGNTL, value=FALSE)
+
 #Populate Mean_rad
-SpaAut_Rad$Mean_rad <- mean(BUGNTL_masked_2014[])
+#Make a list first
+fun_mean <- function(x){
+  cellStats(x, stat="mean", na.rm=TRUE)
+}
 
-#Populate Moran's I
-SpaAut_Tex$Moran_I <- lapply(BUGNTL_masked_2014[], moran(BUGNTL_masked_2014[], ))
+mean_2014 <- c(fun_mean(BUGNTL_masked_2014))
+mean_2015 <- c(fun_mean(BUGNTL_masked_2015))
+mean_2016 <- c(fun_mean(BUGNTL_masked_2016))
+mean_2017 <- c(fun_mean(BUGNTL_masked_2017))
+mean_2018 <- c(fun_mean(BUGNTL_masked_2018))
+mean_2019 <- c(fun_mean(BUGNTL_masked_2019))
+SpaAut_Rad$Mean_rad <- c(mean_2014, mean_2015, mean_2016, mean_2017, mean_2018, mean_2019)
 
-#Multidate LCC of BUG_Masked in City_ROI_Bug----
+#Populate Moran's I (higher = more random)
+#First creat moving window
+fun_moranI <- function(x){
+  Moran(x, w=matrix(c(1, 1, 1, 1, 0, 1, 1, 1, 1), 3, 3))
+}
+
+moran_2014 <- fun_moranI(BUGNTL_masked_2014[])
+
+#Populate st.dev
+fun_st.dev <- function(x){
+  cellStats(x, stat="sd", na.rm=TRUE)
+}
+
+sd_2014 <- c(fun_st.dev(BUGNTL_masked_2014))
+sd_2015 <- c(fun_st.dev(BUGNTL_masked_2015))
+sd_2016 <- c(fun_st.dev(BUGNTL_masked_2016))
+sd_2017 <- c(fun_st.dev(BUGNTL_masked_2017))
+sd_2018 <- c(fun_st.dev(BUGNTL_masked_2018))
+sd_2019 <- c(fun_st.dev(BUGNTL_masked_2019))
+SpaAut_Rad$St.dev <- c(sd_2014, sd_2015, sd_2016, sd_2017, sd_2018, sd_2019)
+
+#Multimonth NTLC of BUG_Masked in City_ROI_Bug----
 
 #Create empty data.frame to populte
 Multimonth_NTLC <- tibble(
-  "Month_range"=list(),
-  "Delta_Mean"=list(),
-  "Delta_Moran_I"=list(),
-  "Delta_Homogeneity"=list()
+  "Month_range",
+  "Delta_Mean",
+  "Delta_Moran_I",
+  "Delta_St.dev"
 )
 
 #Calculate Delta_MD (Change in monthly multi-date)

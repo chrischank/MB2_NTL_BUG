@@ -17,6 +17,7 @@ library(rasterVis)
 library(tidyverse)
 library(rgdal)
 library(lubridate)
+library(usdm)
 
 ################
 #PRE-PROCESSING#
@@ -192,11 +193,14 @@ SpaAut_Rad$Mean_rad <- c(mean_2014, mean_2015, mean_2016, mean_2017, mean_2018, 
 
 #Populate Moran's I (higher = more random)
 #First creat moving window
+
+w <- matrix(c(1, 1, 1, 1, 0, 1, 1, 1, 1), 3, 3)
+
 fun_moranI <- function(x){
-  MoranLocal(x, w=matrix(c(1, 1, 1, 1, 0, 1, 1, 1, 1), 3, 3))
+  Moran(x, w=w)
 }
 
-moran_2014 <- BUGNTLfun_moranI()
+moran_2014 <- lisa(BUGNTL_masked_2014, d1=0, d2=3, statistic = "I")
 
 #Populate st.dev
 fun_st.dev <- function(x){
@@ -215,11 +219,21 @@ SpaAut_Rad$St.dev <- c(sd_2014, sd_2015, sd_2016, sd_2017, sd_2018, sd_2019)
 
 #Create empty data.frame to populte
 Multimonth_NTLC <- tibble(
-  "Month_range",
-  "Delta_Mean",
-  "Delta_Moran_I",
-  "Delta_St.dev"
+  "Month_range"=(1:63),
+  "Delta_Mean"=(1:63),
+  "Delta_Moran_I"=(1:63),
+  "Delta_St.dev"=(1:63)
 )
 
-#Calculate Delta_MD (Change in monthly multi-date)
+#Populate Month range
 
+list.month2 <- seq(as.Date("2014-01-01"), as.Date("2019-04-30"), by="months")
+list.month2 <- list.month2[-54]
+
+fun_mRange <- function(i){
+  ymd(list.month2[i]) %--% ymd(list.month2[(i+1)])
+}
+
+mRange <- fun_mRange(1:length(list.month2[]))
+mRange <- format(mRange, format="%y-%m")
+mRange

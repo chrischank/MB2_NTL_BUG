@@ -163,10 +163,7 @@ plot(BUGNTL_masked_2019$SVDNB_npp_20190401.20190430_75N060W_vcmslcfg_v10_c201905
 
 #Calculate Moran's I & Homogeneity for month----
 
-list.BUGNTL <- c(BUGNTL_masked_2014, BUGNTL_masked_2015, BUGNTL_masked_2016, BUGNTL_masked_2017, BUGNTL_masked_2018, BUGNTL_masked_2019)
-
 #Create empty data.frame to populate
-
 SpaAut_Rad <- tibble(
   "Month"=(1:63),
   "Mean_rad"=(1:63),
@@ -175,7 +172,9 @@ SpaAut_Rad <- tibble(
 )
 
 #Populate month
-month_2014 <- grep("*2014", list.BUGNTL, value=FALSE)
+list.month <- format(seq(as.Date("2014-01-01"), as.Date("2019-04-30"), by="months"), format="%y-%m")
+list.month <- list.month[-54]
+SpaAut_Rad$Month <- list.month
 
 #Populate Mean_rad
 #Make a list first
@@ -194,10 +193,10 @@ SpaAut_Rad$Mean_rad <- c(mean_2014, mean_2015, mean_2016, mean_2017, mean_2018, 
 #Populate Moran's I (higher = more random)
 #First creat moving window
 fun_moranI <- function(x){
-  Moran(x, w=matrix(c(1, 1, 1, 1, 0, 1, 1, 1, 1), 3, 3))
+  MoranLocal(x, w=matrix(c(1, 1, 1, 1, 0, 1, 1, 1, 1), 3, 3))
 }
 
-moran_2014 <- fun_moranI(BUGNTL_masked_2014[])
+moran_2014 <- BUGNTLfun_moranI()
 
 #Populate st.dev
 fun_st.dev <- function(x){

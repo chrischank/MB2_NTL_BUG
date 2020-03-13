@@ -276,6 +276,7 @@ Delta_moranI <- fun_Delta_moranI(1:length(SpaAut_Rad$MoranI))
 Delta_moranI <- Delta_moranI[-63]
 Multimonth_NTLC$Delta_Moran_I <- Delta_moranI
 
-#MULTIDATE LCC FOR DELTA GLCM HOMOGENEITY & CORRELATION----
+####################
+#DATA VISUALISATION#
+####################
 
-#

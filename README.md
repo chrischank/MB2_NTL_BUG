@@ -14,6 +14,6 @@ RQ: To investigate changes in nightlight radiance pattern clustering and texture
 2. St.dev
 3. Moran I
 
-#Calcuöated (local) GLCMs:
+#Calculated (local) GLCMs:
 1. Homogeneity
 2. Correlation

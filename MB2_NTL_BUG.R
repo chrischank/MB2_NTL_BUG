@@ -18,6 +18,8 @@ library(tidyverse)
 library(rgdal)
 library(lubridate)
 library(usdm)
+library(ClusterR)
+library(snow)
 
 ################
 #PRE-PROCESSING#
@@ -87,29 +89,14 @@ Bug_MASK <- shapefile("D:/MB2_DATA/Bulgaria4326.shp")
 compareCRS(tif_2019[[1]], Bug_MASK)
 
 #MASKING----
+beginCluster()
 BUG_Masked_2014 <- crop(stack_2014, Bug_MASK)
-setwd("D:/MB2_DATA/201401_201412/Masked")
-writeRaster(BUG_Masked_2014, filename=names(BUG_Masked_2014), bylayer=TRUE, format="GTiff", datatype="INT2S", overwrite=TRUE)
-
 BUG_Masked_2015 <- crop(stack_2015, Bug_MASK)
-setwd("D:/MB2_DATA/201501_201512/Masked")
-writeRaster(BUG_Masked_2015, filename=names(BUG_Masked_2015), bylayer=TRUE, format="GTiff", datatype="INT2S", overwrite=TRUE)
-
 BUG_Masked_2016 <- crop(stack_2016, Bug_MASK)
-setwd("D:/MB2_DATA/201601_201612/Masked")
-writeRaster(BUG_Masked_2016, filename=names(BUG_Masked_2016), bylayer=TRUE, format="GTiff", datatype="INT2S", overwrite=TRUE)
-
 BUG_Masked_2017 <- crop(stack_2017, Bug_MASK)
-setwd("D:/MB2_DATA/201701_201712/Masked")
-writeRaster(BUG_Masked_2017, filename=names(BUG_Masked_2017), bylayer=TRUE, format="GTiff", datatype="INT2S", overwrite=TRUE)
-
 BUG_Masked_2018 <- crop(stack_2018, Bug_MASK)
-setwd("D:/MB2_DATA/201801_201812(NA06)/Masked")
-writeRaster(BUG_Masked_2018, filename=names(BUG_Masked_2018), bylayer=TRUE, format="GTiff", datatype="INT2S", overwrite=TRUE)
-
 BUG_Masked_2019 <- crop(stack_2019, Bug_MASK)
-setwd("D:/MB2_DATA/201901_201904/Masked")
-writeRaster(BUG_Masked_2019, filename=names(BUG_Masked_2019), bylayer=TRUE, format="GTiff", datatype="INT2S", overwrite=TRUE)
+endCluster()
 
 setwd("D:/MB2_DATA")
 
@@ -140,18 +127,37 @@ sample_201401[sample_201401 == 0] <- NA
 ROI_clusters <- unsuperClass(na.omit(sample_201401), nClasses=2, nStarts=5, nIter=500, norm=FALSE, algorithm="Lloyd")
 plot(ROI_clusters$map)
 
-NTL_ROI_BUG <- rasterToPolygons(ROI_clusters$map, fun=function(x) (x==2), n=16, na.rm=TRUE, dissolve=TRUE)
+NTL_ROI_BUG <- rasterToPolygons(ROI_clusters$map, fun=function(x) (x==1), n=16, na.rm=TRUE, dissolve=TRUE)
 compareCRS(BUG_Masked_2014, NTL_ROI_BUG)
 plot(NTL_ROI_BUG)
 writeOGR(NTL_ROI_BUG,"D:/MB2_DATA", "NTL_ROI_BUG", driver="ESRI Shapefile", overwrite=TRUE)
 
 #Cropping stacks of ONLY NTL for analysis
-BUGNTL_masked_2014 <- stack(crop(BUG_Masked_2014, NTL_ROI_BUG))
-BUGNTL_masked_2015 <- stack(crop(BUG_Masked_2015, NTL_ROI_BUG))
-BUGNTL_masked_2016 <- stack(crop(BUG_Masked_2016, NTL_ROI_BUG))
-BUGNTL_masked_2017 <- stack(crop(BUG_Masked_2017, NTL_ROI_BUG))
-BUGNTL_masked_2018 <- stack(crop(BUG_Masked_2018, NTL_ROI_BUG))
-BUGNTL_masked_2019 <- stack(crop(BUG_Masked_2019, NTL_ROI_BUG))
+beginCluster()
+BUGNTL_masked_2014 <- mask(BUG_Masked_2014, NTL_ROI_BUG)
+setwd("D:/MB2_DATA/201401_201412/Masked")
+writeRaster(BUGNTL_masked_2014, filename=names(BUGNTL_masked_2014), bylayer=TRUE, format="GTiff", datatype="INT2S", overwrite=TRUE)
+
+BUGNTL_masked_2015 <- mask(BUG_Masked_2015, NTL_ROI_BUG)
+setwd("D:/MB2_DATA/201501_201512/Masked")
+writeRaster(BUGNTL_masked_2015, filename=names(BUGNTL_masked_2015), bylayer=TRUE, format="GTiff", datatype="INT2S", overwrite=TRUE)
+
+BUGNTL_masked_2016 <- mask(BUG_Masked_2016, NTL_ROI_BUG)
+setwd("D:/MB2_DATA/201601_201612/Masked")
+writeRaster(BUGNTL_masked_2016, filename=names(BUGNTL_masked_2016), bylayer=TRUE, format="GTiff", datatype="INT2S", overwrite=TRUE)
+
+BUGNTL_masked_2017 <- mask(BUG_Masked_2017, NTL_ROI_BUG)
+setwd("D:/MB2_DATA/201701_201712/Masked")
+writeRaster(BUGNTL_masked_2017, filename=names(BUGNTL_masked_2017), bylayer=TRUE, format="GTiff", datatype="INT2S", overwrite=TRUE)
+
+BUGNTL_masked_2018 <- mask(BUG_Masked_2018, NTL_ROI_BUG)
+setwd("D:/MB2_DATA/201801_201812(NA06)/Masked")
+writeRaster(BUGNTL_masked_2018, filename=names(BUGNTL_masked_2018), bylayer=TRUE, format="GTiff", datatype="INT2S", overwrite=TRUE)
+
+BUGNTL_masked_2019 <- mask(BUG_Masked_2019, NTL_ROI_BUG)
+setwd("D:/MB2_DATA/201901_201904/Masked")
+writeRaster(BUGNTL_masked_2019, filename=names(BUGNTL_masked_2019), bylayer=TRUE, format="GTiff", datatype="INT2S", overwrite=TRUE)
+endCluster()
 
 #Plot comparison between BUG_Masked_2019 & BUGNTL_Maksed_2019
 par(mfrow=c(1, 2))
@@ -164,12 +170,16 @@ plot(BUGNTL_masked_2019$SVDNB_npp_20190401.20190430_75N060W_vcmslcfg_v10_c201905
 
 #Calculate Moran's I & Homogeneity for month----
 
+BUGNTL_masked_list <- c(BUGNTL_masked_2014, BUGNTL_masked_2015, BUGNTL_masked_2016, BUGNTL_masked_2017, BUGNTL_masked_2018, BUGNTL_masked_2019)
+BUGNTL_masked_brick <- brick(BUGNTL_masked_list)
+rm(BUGNTL_masked_list)
+
 #Create empty data.frame to populate
 SpaAut_Rad <- tibble(
   "Month"=(1:63),
   "Mean_rad"=(1:63),
   "Moran_I"=(1:63),
-  "St.dev"=(1:63),
+  "St_dev"=(1:63),
 )
 
 #Populate month
@@ -178,42 +188,25 @@ list.month <- list.month[-54]
 SpaAut_Rad$Month <- list.month
 
 #Populate Mean_rad
-#Make a list first
-fun_mean <- function(x){
-  cellStats(x, stat="mean", na.rm=TRUE)
-}
+beginCluster()
 
-mean_2014 <- c(fun_mean(BUGNTL_masked_2014))
-mean_2015 <- c(fun_mean(BUGNTL_masked_2015))
-mean_2016 <- c(fun_mean(BUGNTL_masked_2016))
-mean_2017 <- c(fun_mean(BUGNTL_masked_2017))
-mean_2018 <- c(fun_mean(BUGNTL_masked_2018))
-mean_2019 <- c(fun_mean(BUGNTL_masked_2019))
-SpaAut_Rad$Mean_rad <- c(mean_2014, mean_2015, mean_2016, mean_2017, mean_2018, mean_2019)
+for (i in 1:dim(BUGNTL_masked_brick)[3]){
+  SpaAut_Rad$Mean_rad <- cellStats(BUGNTL_masked_brick, stat="mean", na.rm=TRUE)
+}
 
 #Populate Moran's I (higher = more random)
-#First creat moving window
 
-w <- matrix(c(1, 1, 1, 1, 0, 1, 1, 1, 1), 3, 3)
-
-fun_moranI <- function(x){
-  Moran(x, w=w)
+for (i in 1:dim(BUGNTL_masked_brick)[3]){
+  SpaAut_Rad$Moran_I <- Moran(i, w=matrix(c(1, 1, 1, 1, 0, 1, 1, 1, 1), 3, 3))
 }
 
-moran_2014 <- lisa(BUGNTL_masked_2014, d1=0, d2=3, statistic = "I")
+#Populate st_dev
 
-#Populate st.dev
-fun_st.dev <- function(x){
-  cellStats(x, stat="sd", na.rm=TRUE)
+for (i in 1:dim(BUGNTL_masked_brick)[3]){
+  SpaAut_Rad$St_dev <- cellStats(BUGNTL_masked_brick, stat="sd", na.rm=TRUE)
 }
 
-sd_2014 <- c(fun_st.dev(BUGNTL_masked_2014))
-sd_2015 <- c(fun_st.dev(BUGNTL_masked_2015))
-sd_2016 <- c(fun_st.dev(BUGNTL_masked_2016))
-sd_2017 <- c(fun_st.dev(BUGNTL_masked_2017))
-sd_2018 <- c(fun_st.dev(BUGNTL_masked_2018))
-sd_2019 <- c(fun_st.dev(BUGNTL_masked_2019))
-SpaAut_Rad$St.dev <- c(sd_2014, sd_2015, sd_2016, sd_2017, sd_2018, sd_2019)
+endCluster()
 
 #Multimonth NTLC of BUG_Masked in City_ROI_Bug----
 
@@ -237,3 +230,4 @@ fun_mRange <- function(i){
 mRange <- fun_mRange(1:length(list.month2[]))
 mRange <- format(mRange, format="%y-%m")
 mRange
+

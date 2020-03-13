@@ -168,7 +168,7 @@ plot(BUGNTL_masked_2019$SVDNB_npp_20190401.20190430_75N060W_vcmslcfg_v10_c201905
 #ANALYSES#
 ##########
 
-#Calculate Moran's I & Homogeneity for month----
+#Calculate descriptive stats, Moran's I, & GLCM for each month----
 
 BUGNTL_masked_list <- c(BUGNTL_masked_2014, BUGNTL_masked_2015, BUGNTL_masked_2016, BUGNTL_masked_2017, BUGNTL_masked_2018, BUGNTL_masked_2019)
 BUGNTL_masked_brick <- brick(BUGNTL_masked_list)
@@ -229,7 +229,7 @@ plot(GLCM_Corr$X19.04)
 
 endCluster()
 
-#Multimonth NTLC of BUG_Masked in City_ROI_Bug----
+#Multimonth NTLC of BUGNTL_Masked in City_ROI_Bug----
 
 #Create empty data.frame to populte
 Multimonth_NTLC <- tibble(

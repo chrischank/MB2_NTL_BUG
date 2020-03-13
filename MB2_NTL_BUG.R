@@ -17,7 +17,7 @@ library(rasterVis)
 library(tidyverse)
 library(rgdal)
 library(lubridate)
-library(usdm)
+library(glcm)
 library(ClusterR)
 library(snow)
 
@@ -36,7 +36,7 @@ path_2018 <- "D:/MB2_DATA/201801_201812(NA06)/"
 path_2019 <- "D:/MB2_DATA/201901_201904/"
 
 #GREP vcmslcfg avg.rade9h
-avg_rade_2014 <- grep("*avg.rade9h", list.files(path=path_2014, pattern="*avg.rade9h.tif$"), value=TRUE)
+avg_rade_2014 <- grep("*avg.rade9h", list.files(path=path_2014, pattern="avg.rade9h.tif$"), value=TRUE)
 avg_rade_2015 <- grep("*avg.rade9h", list.files(path=path_2015, pattern="avg.rade9h.tif$"), value=TRUE)
 avg_rade_2016 <- grep("*avg.rade9h", list.files(path=path_2016, pattern="avg.rade9h.tif$"), value=TRUE)
 avg_rade_2017 <- grep("*avg.rade9h", list.files(path=path_2017, pattern="avg.rade9h.tif$"), value=TRUE)
@@ -175,11 +175,12 @@ BUGNTL_masked_brick <- brick(BUGNTL_masked_list)
 rm(BUGNTL_masked_list)
 
 #Create empty data.frame to populate
+#THE SPATIAL RESOLUTION IS TOO ROUGH FROM SOME GLCM: 
 SpaAut_Rad <- tibble(
   "Month"=(1:63),
   "Mean_rad"=(1:63),
-  "Moran_I"=(1:63),
   "St_dev"=(1:63),
+  "MoranI"=(1:63)
 )
 
 #Populate month
@@ -191,20 +192,40 @@ SpaAut_Rad$Month <- list.month
 beginCluster()
 
 for (i in 1:dim(BUGNTL_masked_brick)[3]){
-  SpaAut_Rad$Mean_rad <- cellStats(BUGNTL_masked_brick, stat="mean", na.rm=TRUE)
-}
-
-#Populate Moran's I (higher = more random)
-
-for (i in 1:dim(BUGNTL_masked_brick)[3]){
-  SpaAut_Rad$Moran_I <- Moran(BUGNTL_masked_brick[}, w=matrix(1/9, nc=3, nr=3))
+  SpaAut_Rad$Mean_rad[i] <- cellStats(BUGNTL_masked_brick[i], stat="mean", na.rm=TRUE)
 }
 
 #Populate st_dev
+for (i in 1:dim(BUGNTL_masked_brick)[3]){
+  SpaAut_Rad$St_dev[i] <- cellStats(BUGNTL_masked_brick[i], stat="sd", na.rm=TRUE)
+}
+
+#Populate moranI
+for (i in 1:dim(BUGNTL_masked_brick)[3]){
+  SpaAut_Rad$MoranI[i] <- Moran(BUGNTL_masked_brick[[i]], w=matrix(c(1/9), 3, 3))
+}
+
+#SEPARATE RASTERBRICK glcm_homogeneity
+GLCM_Homo <- list()
 
 for (i in 1:dim(BUGNTL_masked_brick)[3]){
-  SpaAut_Rad$St_dev <- cellStats(BUGNTL_masked_brick, stat="sd", na.rm=TRUE)
+  GLCM_Homo[i] <- glcm(BUGNTL_masked_brick[[i]], n_grey=32, window=c(3, 3), shift=c(1, 1), statistics=c("homogeneity"), na_opt="ignore")
 }
+
+GLCM_Homo <- brick(GLCM_Homo)
+names(GLCM_Homo) <- SpaAut_Rad$Month
+plot(GLCM_Homo$X19.04)
+
+#SEPARATE RASTERBRICK glcm_correlation
+GLCM_Corr <- list()
+
+for (i in 1:dim(BUGNTL_masked_brick)[3]){
+  GLCM_Corr[i] <- glcm(BUGNTL_masked_brick[[i]], n_grey=32, window=c(3, 3), shift=c(1, 1), statistics=c("correlation"), na_opt="ignore")
+}
+
+GLCM_Corr <- brick(GLCM_Corr)
+names(GLCM_Corr) <- SpaAut_Rad$Month
+plot(GLCM_Corr$X19.04)
 
 endCluster()
 
@@ -214,8 +235,8 @@ endCluster()
 Multimonth_NTLC <- tibble(
   "Month_range"=(1:62),
   "Delta_Mean"=(1:62),
-  "Delta_Moran_I"=(1:62),
-  "Delta_St.dev"=(1:62)
+  "Delta_St.dev"=(1:62),
+  "Delta_Moran_I"=(1:62)
 )
 
 #Populate Month range
@@ -232,22 +253,29 @@ mRange[62] <- is.interval("2019-03-01 UTC--2019-0-30 UTC")
 Multimonth_NTLC$Month_range <- mRange
 
 #Populate Delta mean
-
-fun_DeltaM <- function(i){
+fun_Delta_mean <- function(i){
   SpaAut_Rad$Mean_rad[i+1]-SpaAut_Rad$Mean_rad[i]
 }
-DeltaM <- fun_DeltaM(1:length(SpaAut_Rad$Mean_rad))
-DeltaM <- DeltaM[-63]
-Multimonth_NTLC$Delta_Mean <- DeltaM
-
-#Populate Delta_moran
-
-
+Delta_mean <- fun_Delta_mean(1:length(SpaAut_Rad$Mean_rad))
+Delta_mean <- Delta_mean[-63]
+Multimonth_NTLC$Delta_Mean <- Delta_mean
 
 #Populate St_dev
-fun_st.dev <- function(i){
-  SpaAut_Rad$St_dev[i+1]-SpaAut_Rad$St_dev
+fun_Delta_st.dev <- function(i){
+  SpaAut_Rad$St_dev[i+1]-SpaAut_Rad$St_dev[i]
 }
-Delta_st.dev <- fun_st.dev(1:length(SpaAut_Rad$St_dev))
+Delta_st.dev <- fun_Delta_st.dev(1:length(SpaAut_Rad$St_dev))
 Delta_st.dev <- Delta_st.dev[-63]
 Multimonth_NTLC$Delta_St.dev <- Delta_st.dev
+
+#Populate Delta_moran
+fun_Delta_moranI <- function(i){
+  SpaAut_Rad$MoranI[i+1]-SpaAut_Rad$MoranI[i]
+}
+Delta_moranI <- fun_Delta_moranI(1:length(SpaAut_Rad$MoranI))
+Delta_moranI <- Delta_moranI[-63]
+Multimonth_NTLC$Delta_Moran_I <- Delta_moranI
+
+#MULTIDATE LCC FOR DELTA GLCM HOMOGENEITY & CORRELATION----
+
+#

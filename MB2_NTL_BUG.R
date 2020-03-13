@@ -197,7 +197,7 @@ for (i in 1:dim(BUGNTL_masked_brick)[3]){
 #Populate Moran's I (higher = more random)
 
 for (i in 1:dim(BUGNTL_masked_brick)[3]){
-  SpaAut_Rad$Moran_I <- Moran(i, w=matrix(c(1, 1, 1, 1, 0, 1, 1, 1, 1), 3, 3))
+  SpaAut_Rad$Moran_I <- Moran(BUGNTL_masked_brick[}, w=matrix(1/9, nc=3, nr=3))
 }
 
 #Populate st_dev
@@ -212,22 +212,42 @@ endCluster()
 
 #Create empty data.frame to populte
 Multimonth_NTLC <- tibble(
-  "Month_range"=(1:63),
-  "Delta_Mean"=(1:63),
-  "Delta_Moran_I"=(1:63),
-  "Delta_St.dev"=(1:63)
+  "Month_range"=(1:62),
+  "Delta_Mean"=(1:62),
+  "Delta_Moran_I"=(1:62),
+  "Delta_St.dev"=(1:62)
 )
 
 #Populate Month range
-
 list.month2 <- seq(as.Date("2014-01-01"), as.Date("2019-04-30"), by="months")
 list.month2 <- list.month2[-54]
 
 fun_mRange <- function(i){
-  ymd(list.month2[i]) %--% ymd(list.month2[(i+1)])
+  ymd(list.month2[i]) %--% ymd(list.month2[(i+2)])
 }
 
 mRange <- fun_mRange(1:length(list.month2[]))
-mRange <- format(mRange, format="%y-%m")
-mRange
+mRange <- mRange[-63]
+mRange[62] <- is.interval("2019-03-01 UTC--2019-0-30 UTC")
+Multimonth_NTLC$Month_range <- mRange
 
+#Populate Delta mean
+
+fun_DeltaM <- function(i){
+  SpaAut_Rad$Mean_rad[i+1]-SpaAut_Rad$Mean_rad[i]
+}
+DeltaM <- fun_DeltaM(1:length(SpaAut_Rad$Mean_rad))
+DeltaM <- DeltaM[-63]
+Multimonth_NTLC$Delta_Mean <- DeltaM
+
+#Populate Delta_moran
+
+
+
+#Populate St_dev
+fun_st.dev <- function(i){
+  SpaAut_Rad$St_dev[i+1]-SpaAut_Rad$St_dev
+}
+Delta_st.dev <- fun_st.dev(1:length(SpaAut_Rad$St_dev))
+Delta_st.dev <- Delta_st.dev[-63]
+Multimonth_NTLC$Delta_St.dev <- Delta_st.dev

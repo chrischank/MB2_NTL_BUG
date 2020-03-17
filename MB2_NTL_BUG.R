@@ -192,12 +192,12 @@ SpaAut_Rad$Month <- list.month
 beginCluster()
 
 for (i in 1:dim(BUGNTL_masked_brick)[3]){
-  SpaAut_Rad$Mean_rad[i] <- cellStats(BUGNTL_masked_brick[i], stat="mean", na.rm=TRUE)
+  SpaAut_Rad$Mean_rad <- cellStats(BUGNTL_masked_brick, stat="mean", na.rm=TRUE)
 }
 
 #Populate st_dev
 for (i in 1:dim(BUGNTL_masked_brick)[3]){
-  SpaAut_Rad$St_dev[i] <- cellStats(BUGNTL_masked_brick[i], stat="sd", na.rm=TRUE)
+  SpaAut_Rad$St_dev <- cellStats(BUGNTL_masked_brick, stat="sd", na.rm=TRUE)
 }
 
 #Populate moranI
@@ -276,7 +276,14 @@ Delta_moranI <- fun_Delta_moranI(1:length(SpaAut_Rad$MoranI))
 Delta_moranI <- Delta_moranI[-63]
 Multimonth_NTLC$Delta_Moran_I <- Delta_moranI
 
-####################
-#DATA VISUALISATION#
-####################
+setwd("C:/Users/s1526/Dropbox/MB2_IPG(s382722)")
+write.csv(SpaAut_Rad, "BUGNTL_1419.csv")
+write.csv(Multimonth_NTLC, "Delta_BUGNTL_1419.csv")
+BUGNTL_1419 <- read.csv("BUGNTL_1419.csv", header=TRUE, sep=",", dec=".")
+Delta_BUGNTL_1419 <- read.csv("Delta_BUGNTL_1419.csv", header=TRUE, sep=",", dec=".")
+
+##########################################
+#DATA VISUALISATION AND ADVANCED ANALYSIS#
+##########################################
+
 

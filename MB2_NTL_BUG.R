@@ -200,7 +200,7 @@ for (i in 1:dim(BUGNTL_masked_brick)[3]){
   SpaAut_Rad$St_dev <- cellStats(BUGNTL_masked_brick, stat="sd", na.rm=TRUE)
 }
 
-#Populate moranI
+#Populate moranI (closer to 1 the more orderly)
 for (i in 1:dim(BUGNTL_masked_brick)[3]){
   SpaAut_Rad$MoranI[i] <- Moran(BUGNTL_masked_brick[[i]], w=matrix(c(1/9), 3, 3))
 }
@@ -286,4 +286,19 @@ Delta_BUGNTL_1419 <- read.csv("Delta_BUGNTL_1419.csv", header=TRUE, sep=",", dec
 #DATA VISUALISATION AND ADVANCED ANALYSIS#
 ##########################################
 
+#Assumptions: Bulgaria experienced sustained economic growth since 2014 but a continuous shrinking population
+  #Therefore, randomness (urban sprawl) should decrease, while radiance intensity would increase
+  #Globally: Moran's I; st.dev (randomness shall decrease), while mean radiation shall increase
+  #Texturally: GLCM_homogeneity shall decrease, while GLCM collinearity shall increase
+#INDEPENDENT = Moran I ; st.dev | GLCM Homogeneity
+#DEPENDENT = mean_rad | GLCM Correlation
 
+#H0: NTL of Bulgaria does not show significant pattern change between 2014 to 2019
+#H1: NTL of Bulgaria follows the assumption of decreasing disorder, but brightening
+
+#Test for Heteroeskedasticity
+
+
+#TEST FOR Correlation and covariance correlation between global variables
+corr_Mean_Moran <- cor(SpaAut_Rad$Mean_rad, SpaAut_Rad$MoranI, method="spearman")
+cova_Mean_St.dev <- cov(SpaAut_Rad$Mean_rad,SpaAut_Rad$St_dev, method="spearman")

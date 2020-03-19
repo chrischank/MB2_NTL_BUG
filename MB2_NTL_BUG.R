@@ -9,7 +9,6 @@ setwd("D:/MB2_DATA")
 
 #Libraries----
 library(RStoolbox)
-library(raster)
 library(sp)
 library(shapefiles)
 library(viridis)
@@ -20,6 +19,7 @@ library(lubridate)
 library(glcm)
 library(ClusterR)
 library(snow)
+library(colortools)
 library(ggthemes)
 
 ################
@@ -124,7 +124,7 @@ ggsave("Bulgaria NTL 2019(Jan-Apr).png", scale=1.5, dpi=300, overwrite=TRUE)
 sample_201401 <- BUG_Masked_2014$SVDNB_npp_20140101.20140131_75N060W_vcmslcfg_v10_c2015006171539.avg_rade9h
 sample_201401[sample_201401 == 0] <- NA
 
-#KMeans to 2 classes (High lights & Low lights)
+#KMeans to 2 classes (Yes lights & No lights)
 ROI_clusters <- unsuperClass(na.omit(sample_201401), nClasses=2, nStarts=5, nIter=500, norm=FALSE, algorithm="Lloyd")
 plot(ROI_clusters$map)
 
@@ -282,8 +282,6 @@ write.csv(SpaAut_Rad, "BUGNTL_1419.csv")
 write.csv(Multimonth_NTLC, "Delta_BUGNTL_1419.csv")
 BUGNTL_1419 <- read.csv("BUGNTL_1419.csv", header=TRUE, sep=",", dec=".")
 Delta_BUGNTL_1419 <- read.csv("Delta_BUGNTL_1419.csv", header=TRUE, sep=",", dec=".")
-rm(SpaAut_Rad)
-rm(Multimonth_NTLC)
 
 ##########################################
 #DATA VISUALISATION AND ADVANCED ANALYSIS#
@@ -301,15 +299,13 @@ rm(Multimonth_NTLC)
 
 #Test for Heteroeskedasticity
 
-findCorrelation(cor(SpaAut_Rad$Mean_rad), cutoff=0.5, names=TRUE, verbose=TRUE)
-
 #TEST FOR Correlation and covariance correlation between global variables
-cor(SpaAut_Rad$Mean_rad, SpaAut_Rad$MoranI, method="spearman")
-#Corr of 0,07 between mean and Moran I suggests little and weak relationship between mean radation and spatial randomness
-cor(SpaAut_Rad$Mean_rad,SpaAut_Rad$St_dev, method="spearman")
-#Corr of 0,65 suggests a moderate positive relation between mean radiance and st.dev
-cor(SpaAut_Rad$St_dev, SpaAut_Rad$MoranI, method="spearman")
-#Corr of -0,21
+cor(BUGNTL_1419$Mean_rad, BUGNTL_1419$MoranI, method="spearman")
+#Corr of -0.02 between mean and Moran I suggests little and weak relationship between mean radation and spatial randomness
+cor(BUGNTL_1419$Mean_rad,BUGNTL_1419$St_dev, method="spearman")
+#Corr of 0.79 suggests a moderate positive relation between mean radiance and st.dev
+cor(BUGNTL_1419$St_dev, BUGNTL_1419$MoranI, method="spearman")
+#Corr of -0.22
 
 #Let's plot the timesries individually anyway with their DELTA
 
@@ -322,18 +318,33 @@ BUGNTL_1419$Month <- list.month3
 (ts <- ggplot(BUGNTL_1419)+
     geom_line(aes(x=Month, y=Mean_rad, color="Red"))+
     geom_line(aes(x=Month, y=St_dev, color="Green"))+
-    geom_line(aes(x=Month, y=MoranI, color="Purple"))+
-    scale_x_date(date_labels="%M", date_breaks="1 month")+
+    geom_line(aes(x=Month, y=MoranI*40, color="Purple"))+
+    scale_y_continuous(name="Mean rad & St.dev",
+                       sec.axis=sec_axis(~./40, name="Moran's I"))+
+    scale_x_date(date_labels="%y %m", date_breaks="4 months")+
     labs(title="Time-series stats of Bulgaria NTL", x="Date", y=" ")+
-    theme_economist())
-
+    theme_economist_white())
 
 (Delta_ts <- ggplot(Delta_BUGNTL_1419)+
     geom_line(aes(x=Month_range, y=Delta_Mean, color="Red"))+
     geom_line(aes(x=Month_range, y=Delta_St.dev, color="Green"))+
-    geom_line(aes(x=Month_range, y=Delta_Moran_I, color="Blue"))+
-    scale_x_date(date_labels="%M", date_breaks="1 month")+
-    theme_classic())
+    geom_line(aes(x=Month_range, y=Delta_Moran_I, color="Purple"))+
+    scale_x_continuous()
+    labs(title="Time-series (DELTA) stats of Bulgaria NTL", x="Date", y=" ")+
+    theme_economist_white())
+
+#Timeseries decomposition for each stats
+mean_rad_ts <- ts(BUGNTL_1419$Mean_rad, start=2014, end=2019, freq=12)
+mean_rad_stl <- stl(mean_rad_ts, s.window="period")
+plot(mean_rad_stl, main="Decomp Timeseries of Mean Bulgaria NTL")
+
+st.dev_ts <- ts(BUGNTL_1419$St_dev, start=2014, end=2019, freq=12)
+st.dev_stl <- stl(st.dev_ts, s.window="period")
+plot(st.dev_stl, main="Decomp Timeseries of St.dev Bulgaria NTL")
+
+moranI_ts <- ts(BUGNTL_1419$MoranI, start=2014, end=2019, freq=12)
+moranI_stl <- stl(moranI_ts, s.window="period")
+plot(moranI_stl, main="Decomp Timeseries of Moran's I Bulgaria NTL")
 
 #ALL CORRELATION TESTING SUGGESTS NO SIGNIFICANT RELATIONSHIP BUT PERHAPS MEAN_RAD AND ST_DEV
 #WHICH SUGGESTS THAT THERES NO INDICATION IN 1st ORDER DERIVED STATS

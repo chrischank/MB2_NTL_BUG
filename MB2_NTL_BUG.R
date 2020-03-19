@@ -20,6 +20,7 @@ library(lubridate)
 library(glcm)
 library(ClusterR)
 library(snow)
+library(ggthemes)
 
 ################
 #PRE-PROCESSING#
@@ -281,6 +282,8 @@ write.csv(SpaAut_Rad, "BUGNTL_1419.csv")
 write.csv(Multimonth_NTLC, "Delta_BUGNTL_1419.csv")
 BUGNTL_1419 <- read.csv("BUGNTL_1419.csv", header=TRUE, sep=",", dec=".")
 Delta_BUGNTL_1419 <- read.csv("Delta_BUGNTL_1419.csv", header=TRUE, sep=",", dec=".")
+rm(SpaAut_Rad)
+rm(Multimonth_NTLC)
 
 ##########################################
 #DATA VISUALISATION AND ADVANCED ANALYSIS#
@@ -290,15 +293,55 @@ Delta_BUGNTL_1419 <- read.csv("Delta_BUGNTL_1419.csv", header=TRUE, sep=",", dec
   #Therefore, randomness (urban sprawl) should decrease, while radiance intensity would increase
   #Globally: Moran's I; st.dev (randomness shall decrease), while mean radiation shall increase
   #Texturally: GLCM_homogeneity shall decrease, while GLCM collinearity shall increase
-#INDEPENDENT = Moran I ; st.dev | GLCM Homogeneity
-#DEPENDENT = mean_rad | GLCM Correlation
+#INDEPENDENT = Moran I ; st.dev | GLCM Correlation
+#DEPENDENT = mean_rad | GLCM Homogeneity
 
 #H0: NTL of Bulgaria does not show significant pattern change between 2014 to 2019
 #H1: NTL of Bulgaria follows the assumption of decreasing disorder, but brightening
 
 #Test for Heteroeskedasticity
 
+findCorrelation(cor(SpaAut_Rad$Mean_rad), cutoff=0.5, names=TRUE, verbose=TRUE)
 
 #TEST FOR Correlation and covariance correlation between global variables
-corr_Mean_Moran <- cor(SpaAut_Rad$Mean_rad, SpaAut_Rad$MoranI, method="spearman")
-cova_Mean_St.dev <- cov(SpaAut_Rad$Mean_rad,SpaAut_Rad$St_dev, method="spearman")
+cor(SpaAut_Rad$Mean_rad, SpaAut_Rad$MoranI, method="spearman")
+#Corr of 0,07 between mean and Moran I suggests little and weak relationship between mean radation and spatial randomness
+cor(SpaAut_Rad$Mean_rad,SpaAut_Rad$St_dev, method="spearman")
+#Corr of 0,65 suggests a moderate positive relation between mean radiance and st.dev
+cor(SpaAut_Rad$St_dev, SpaAut_Rad$MoranI, method="spearman")
+#Corr of -0,21
+
+#Let's plot the timesries individually anyway with their DELTA
+
+#Transform BUGNTL_1419 Date character back into lubridate date
+
+list.month3 <- seq(as.Date("2014-01-01"), as.Date("2019-04-30"), by="months")
+list.month3 <- list.month3[-54]
+BUGNTL_1419$Month <- list.month3
+
+(ts <- ggplot(BUGNTL_1419)+
+    geom_line(aes(x=Month, y=Mean_rad, color="Red"))+
+    geom_line(aes(x=Month, y=St_dev, color="Green"))+
+    geom_line(aes(x=Month, y=MoranI, color="Purple"))+
+    scale_x_date(date_labels="%M", date_breaks="1 month")+
+    labs(title="Time-series stats of Bulgaria NTL", x="Date", y=" ")+
+    theme_economist())
+
+
+(Delta_ts <- ggplot(Delta_BUGNTL_1419)+
+    geom_line(aes(x=Month_range, y=Delta_Mean, color="Red"))+
+    geom_line(aes(x=Month_range, y=Delta_St.dev, color="Green"))+
+    geom_line(aes(x=Month_range, y=Delta_Moran_I, color="Blue"))+
+    scale_x_date(date_labels="%M", date_breaks="1 month")+
+    theme_classic())
+
+#ALL CORRELATION TESTING SUGGESTS NO SIGNIFICANT RELATIONSHIP BUT PERHAPS MEAN_RAD AND ST_DEV
+#WHICH SUGGESTS THAT THERES NO INDICATION IN 1st ORDER DERIVED STATS
+#IF HYPOTHESIS BASED ON 1st ORDER STAT, ACCEPT NULL HYPOTHESIS
+#LET'S TRY THE GLCM, as homogeneity increases, so should correlation
+
+Corr_GLCM <- corLocal(GLCM_Homo, GLCM_Corr, ngb=3, method="spearman", test=TRUE)
+plot()
+
+#MAKE GLCM Homogeneity and Correlation into gifs
+gif_GLCM_Homo <- 

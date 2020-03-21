@@ -193,12 +193,12 @@ SpaAut_Rad$Month <- list.month
 beginCluster()
 
 for (i in 1:dim(BUGNTL_masked_brick)[3]){
-  SpaAut_Rad$Mean_rad <- cellStats(BUGNTL_masked_brick, stat="mean", na.rm=TRUE)
+  SpaAut_Rad$Mean_rad <- cellStats(BUGNTL_masked_brick[[i]], stat="mean", na.rm=TRUE)
 }
 
 #Populate st_dev
 for (i in 1:dim(BUGNTL_masked_brick)[3]){
-  SpaAut_Rad$St_dev <- cellStats(BUGNTL_masked_brick, stat="sd", na.rm=TRUE)
+  SpaAut_Rad$St_dev <- cellStats(BUGNTL_masked_brick[[i]], stat="sd", na.rm=TRUE)
 }
 
 #Populate moranI (closer to 1 the more orderly)

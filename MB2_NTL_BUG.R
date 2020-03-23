@@ -128,6 +128,9 @@ sample_201401[sample_201401 == 0] <- NA
 ROI_clusters <- unsuperClass(na.omit(sample_201401), nClasses=2, nStarts=5, nIter=500, norm=FALSE, algorithm="Lloyd")
 plot(ROI_clusters$map)
 
+#RUN THE CODE TILL HERE! CHECK THE PLOT BEFORE CONTINUE
+
+#HERE X SHALL BE CHOSEN BASED ON THE PLOT ABOVE!!
 NTL_ROI_BUG <- rasterToPolygons(ROI_clusters$map, fun=function(x) (x==2), n=16, na.rm=TRUE, dissolve=TRUE)
 compareCRS(BUG_Masked_2014, NTL_ROI_BUG)
 plot(NTL_ROI_BUG)
@@ -290,14 +293,13 @@ Delta_BUGNTL_1419 <- read.csv("Delta_BUGNTL_1419.csv", header=TRUE, sep=",", dec
 #Assumptions: Bulgaria experienced sustained economic growth since 2014 but a continuous shrinking population
   #Therefore, randomness (urban sprawl) should decrease, while radiance intensity would increase
   #Globally: Moran's I; st.dev (randomness shall decrease), while mean radiation shall increase
+#NOT SURE GLCM IS APPRIORIATE FOR NTL, probably not
   #Texturally: GLCM_homogeneity shall decrease, while GLCM collinearity shall increase
-#INDEPENDENT = Moran I ; st.dev | GLCM Correlation
+#INDEPENDENT = Moran's I ; st.dev | GLCM Correlation
 #DEPENDENT = mean_rad | GLCM Homogeneity
 
 #H0: NTL of Bulgaria does not show significant pattern change between 2014 to 2019
 #H1: NTL of Bulgaria follows the assumption of decreasing disorder, but brightening
-
-#Test for Heteroeskedasticity
 
 #TEST FOR Correlation and covariance correlation between global variables
 cor(BUGNTL_1419$Mean_rad, BUGNTL_1419$MoranI, method="spearman")
@@ -325,34 +327,64 @@ BUGNTL_1419$Month <- list.month3
     labs(title="Time-series stats of Bulgaria NTL", x="Date", y=" ")+
     theme_economist_white())
 
+#GGPLOT DOESN'T WORK WITH 
 (Delta_ts <- ggplot(Delta_BUGNTL_1419)+
     geom_line(aes(x=Month_range, y=Delta_Mean, color="Red"))+
     geom_line(aes(x=Month_range, y=Delta_St.dev, color="Green"))+
     geom_line(aes(x=Month_range, y=Delta_Moran_I, color="Purple"))+
-    scale_x_continuous()
-    labs(title="Time-series (DELTA) stats of Bulgaria NTL", x="Date", y=" ")+
+    scale_y_continuous(name="Mean rad & St.dev",
+                       sec.axis=sec_axis(~./30, name="Delta Moran's I"))+
+    labs(title="Time-series (DELTA) stats of Bulgaria NTL", x="Date range", y=" ")+
     theme_economist_white())
 
 #Timeseries decomposition for each stats
 mean_rad_ts <- ts(BUGNTL_1419$Mean_rad, start=2014, end=2019, freq=12)
 mean_rad_stl <- stl(mean_rad_ts, s.window="period")
+png("Decomp Timeseries of Mean Bulgaria NTL.png")
 plot(mean_rad_stl, main="Decomp Timeseries of Mean Bulgaria NTL")
+dev.off()
 
 st.dev_ts <- ts(BUGNTL_1419$St_dev, start=2014, end=2019, freq=12)
 st.dev_stl <- stl(st.dev_ts, s.window="period")
+png("Decomp Timeseries of St.dev Bulgaria NTL.png")
 plot(st.dev_stl, main="Decomp Timeseries of St.dev Bulgaria NTL")
+dev.off()
 
 moranI_ts <- ts(BUGNTL_1419$MoranI, start=2014, end=2019, freq=12)
 moranI_stl <- stl(moranI_ts, s.window="period")
+png("Decomp Timeseries of Moran's I Bulgaria NTL.png")
 plot(moranI_stl, main="Decomp Timeseries of Moran's I Bulgaria NTL")
+dev.off()
+
+#Delta timewseries decomp
+Delta_mean_ts <- ts(Delta_BUGNTL_1419$Delta_Mean, start=2014, end=2019, freq=12)
+Delta_mean_stl <- stl(Delta_mean_ts, s.window="period")
+png("Decomp Timeseries of Delta Mean_rad Bulgaria NTL.png")
+plot(Delta_mean_stl, main="Decomp Timeseries of Delta Mean_rad Bulgaria NTL")
+dev.off()
+
+Delta_st.dev_ts <- ts(Delta_BUGNTL_1419$Delta_St.dev, start=2014, end=2019, freq=12)
+Delta_st.dev_stl <- stl(Delta_st.dev_ts, s.window="period")
+png("Decomp Timeseries of Delta st.dev Bulgaria NTL.png")
+plot(Delta_st.dev_stl, main="Decomp Timeseries of Delta st.dev Bulgaria NTL")
+dev.off()
+
+Delta_moranI_ts <- ts(Delta_BUGNTL_1419$Delta_Moran_I, start=2014, end=2019, freq=12)
+Delta_moranI_stl <- stl(Delta_moranI_ts, s.window="period")
+png("Decomp Timeseries of Delta Moran's I Bulgaria NTL.png")
+plot(Delta_moranI_stl, main="Decomp Timeseries of Delta Moran's I Bulgaria NTL")
+dev.off()
 
 #ALL CORRELATION TESTING SUGGESTS NO SIGNIFICANT RELATIONSHIP BUT PERHAPS MEAN_RAD AND ST_DEV
 #WHICH SUGGESTS THAT THERES NO INDICATION IN 1st ORDER DERIVED STATS
 #IF HYPOTHESIS BASED ON 1st ORDER STAT, ACCEPT NULL HYPOTHESIS
+
+#Although no correlation, when examine individually, Mean radiation and St.dev grew steadily generally
+#Moran's I grew till 2017 then into a steep drop off
+
 #LET'S TRY THE GLCM, as homogeneity increases, so should correlation
 
 Corr_GLCM <- corLocal(GLCM_Homo, GLCM_Corr, ngb=3, method="spearman", test=TRUE)
-plot()
-
-#MAKE GLCM Homogeneity and Correlation into gifs
-gif_GLCM_Homo <- 
+png("Spearman correlation between GLCM Homogeneity and correlation")
+plot(Corr_GLCM)
+dev.off()

@@ -128,7 +128,7 @@ sample_201401[sample_201401 == 0] <- NA
 ROI_clusters <- unsuperClass(na.omit(sample_201401), nClasses=2, nStarts=5, nIter=500, norm=FALSE, algorithm="Lloyd")
 plot(ROI_clusters$map)
 
-NTL_ROI_BUG <- rasterToPolygons(ROI_clusters$map, fun=function(x) (x==1), n=16, na.rm=TRUE, dissolve=TRUE)
+NTL_ROI_BUG <- rasterToPolygons(ROI_clusters$map, fun=function(x) (x==2), n=16, na.rm=TRUE, dissolve=TRUE)
 compareCRS(BUG_Masked_2014, NTL_ROI_BUG)
 plot(NTL_ROI_BUG)
 writeOGR(NTL_ROI_BUG,"D:/MB2_DATA", "NTL_ROI_BUG", driver="ESRI Shapefile", overwrite=TRUE)
@@ -193,12 +193,12 @@ SpaAut_Rad$Month <- list.month
 beginCluster()
 
 for (i in 1:dim(BUGNTL_masked_brick)[3]){
-  SpaAut_Rad$Mean_rad <- cellStats(BUGNTL_masked_brick[[i]], stat="mean", na.rm=TRUE)
+  SpaAut_Rad$Mean_rad <- cellStats(BUGNTL_masked_brick, stat="mean", na.rm=TRUE)
 }
 
 #Populate st_dev
 for (i in 1:dim(BUGNTL_masked_brick)[3]){
-  SpaAut_Rad$St_dev <- cellStats(BUGNTL_masked_brick[[i]], stat="sd", na.rm=TRUE)
+  SpaAut_Rad$St_dev <- cellStats(BUGNTL_masked_brick, stat="sd", na.rm=TRUE)
 }
 
 #Populate moranI (closer to 1 the more orderly)
@@ -318,9 +318,9 @@ BUGNTL_1419$Month <- list.month3
 (ts <- ggplot(BUGNTL_1419)+
     geom_line(aes(x=Month, y=Mean_rad, color="Red"))+
     geom_line(aes(x=Month, y=St_dev, color="Green"))+
-    geom_line(aes(x=Month, y=MoranI*40, color="Purple"))+
+    geom_line(aes(x=Month, y=MoranI*30, color="Purple"))+
     scale_y_continuous(name="Mean rad & St.dev",
-                       sec.axis=sec_axis(~./40, name="Moran's I"))+
+                       sec.axis=sec_axis(~./30, name="Moran's I"))+
     scale_x_date(date_labels="%y %m", date_breaks="4 months")+
     labs(title="Time-series stats of Bulgaria NTL", x="Date", y=" ")+
     theme_economist_white())

@@ -380,7 +380,7 @@ dev.off()
 #IF HYPOTHESIS BASED ON 1st ORDER STAT, ACCEPT NULL HYPOTHESIS
 
 #Although no correlation, when examine individually, Mean radiation and St.dev grew steadily generally
-#Moran's I grew till 2017 then into a steep drop off
+#Moran's I grew till 2017 then into a steep drop off, suggesting NTL to get more organised and then disorganised
 
 #LET'S TRY THE GLCM, as homogeneity increases, so should correlation
 

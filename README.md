@@ -19,14 +19,16 @@ RQ: To investigate changes in nightlight radiance pattern clustering and texture
 2. Correlation
 
 #Assumptions: Bulgaria experienced sustained economic growth since 2014 but a continuous shrinking population
-  Therefore, randomness (urban sprawl) should decrease, while radiance intensity would increase
-  Globally: Moran's I; st.dev (randomness shall decrease), while mean radiation shall increase
+Therefore, randomness (urban sprawl) should decrease, while radiance intensity would increase
+Globally: Moran's I; st.dev (randomness shall decrease), while mean radiation shall increase
 
 *NOT SURE GLCM IS APPRIORIATE FOR NTL, probably not
   
-  Texturally: GLCM_homogeneity shall decrease, while GLCM collinearity shall increase
+Texturally: GLCM_homogeneity shall decrease, while GLCM collinearity shall increase
+  
 INDEPENDENT = Moran's I ; st.dev | GLCM Correlation
 DEPENDENT = mean_rad | GLCM Homogeneity
 
 H0: NTL of Bulgaria does not show significant pattern change between 2014 to 2019
+
 H1: NTL of Bulgaria follows the assumption of decreasing disorder, but brightening

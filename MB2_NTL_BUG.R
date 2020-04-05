@@ -19,6 +19,7 @@ library(lubridate)
 library(glcm)
 library(ClusterR)
 library(snow)
+library(wbstats)
 library(colortools)
 library(ggthemes)
 
@@ -168,6 +169,54 @@ par(mfrow=c(1, 2))
 plot(BUG_Masked_2019$SVDNB_npp_20190401.20190430_75N060W_vcmslcfg_v10_c201905191000.avg_rade9h, main="BulgariaNTL_201904", col=viridis_pal(option = "D")(10))
 plot(BUGNTL_masked_2019$SVDNB_npp_20190401.20190430_75N060W_vcmslcfg_v10_c201905191000.avg_rade9h, main="BUGNTL_Masked_201904", col=viridis_pal(option = "D")(10))
 
+#Call layer from dir instead
+
+#Mask path
+path_2014 <- "D:/MB2_DATA/201401_201412/Masked/"
+path_2015 <- "D:/MB2_DATA/201501_201512/Masked/"
+path_2016 <- "D:/MB2_DATA/201601_201612/Masked/"
+path_2017 <- "D:/MB2_DATA/201701_201712/Masked/"
+path_2018 <- "D:/MB2_DATA/201801_201812(NA06)/Masked/"
+path_2019 <- "D:/MB2_DATA/201901_201904/Masked/"
+
+#grep mask
+mask_2014 <- grep("*avg.rade9h", list.files(path=path_2014, pattern="avg.rade9h.tif$"), value=TRUE)
+mask_2015 <- grep("*avg.rade9h", list.files(path=path_2015, pattern="avg.rade9h.tif$"), value=TRUE)
+mask_2016 <- grep("*avg.rade9h", list.files(path=path_2016, pattern="avg.rade9h.tif$"), value=TRUE)
+mask_2017 <- grep("*avg.rade9h", list.files(path=path_2017, pattern="avg.rade9h.tif$"), value=TRUE)
+mask_2018 <- grep("*avg.rade9h", list.files(path=path_2018, pattern="avg.rade9h.tif$"), value=TRUE)
+mask_2019 <- grep("*avg.rade9h", list.files(path=path_2019, pattern="avg.rade9h.tif$"), value=TRUE)
+
+#paste
+mask.tif_2014 <- paste0(path_2014, mask_2014)
+mask.tif_2015 <- paste0(path_2015, mask_2015)
+mask.tif_2016 <- paste0(path_2016, mask_2016)
+mask.tif_2017 <- paste0(path_2017, mask_2017)
+mask.tif_2018 <- paste0(path_2018, mask_2018)
+mask.tif_2019 <- paste0(path_2019, mask_2019)
+
+mask.tif_2014 = lapply(mask.tif_2014[], raster)
+mask.tif_2015 = lapply(mask.tif_2015[], raster)
+mask.tif_2016 = lapply(mask.tif_2016[], raster)
+mask.tif_2017 = lapply(mask.tif_2017[], raster)                  
+mask.tif_2018 = lapply(mask.tif_2018[], raster)
+mask.tif_2019 = lapply(mask.tif_2019[], raster)
+
+BUGNTL_masked_2014 <-  stack(mask.tif_2014[1:length(mask.tif_2014)])
+BUGNTL_masked_2015 <-  stack(mask.tif_2015[1:length(mask.tif_2015)])
+BUGNTL_masked_2016 <-  stack(mask.tif_2016[1:length(mask.tif_2016)])
+BUGNTL_masked_2017 <-  stack(mask.tif_2017[1:length(mask.tif_2017)])
+BUGNTL_masked_2018 <-  stack(mask.tif_2018[1:length(mask.tif_2018)])
+BUGNTL_masked_2019 <-  stack(mask.tif_2019[1:length(mask.tif_2019)])
+
+rm(BUG_Masked_2014, BUG_Masked_2015, BUG_Masked_2016, BUG_Masked_2017, BUG_Masked_2018, BUG_Masked_2019,
+     mask.tif_2014, mask.tif_2015, mask.tif_2016, mask.tif_2017, mask.tif_2018, mask.tif_2019,
+     stack_2014, stack_2015, stack_2016, stack_2017, stack_2018, stack_2019,
+     tif_2014, tif_2015, tif_2016, tif_2017, tif_2018, tif_2019,
+     avg_rade_2014, avg_rade_2015, avg_rade_2016, avg_rade_2017, avg_rade_2018, avg_rade_2019,
+     mask_2014, mask_2015, mask_2016, mask_2017, mask_2018, mask_2019,
+     path_2014, path_2015, path_2016, path_2017, path_2018, path_2019)
+
 ##########
 #ANALYSES#
 ##########
@@ -196,12 +245,12 @@ SpaAut_Rad$Month <- list.month
 beginCluster()
 
 for (i in 1:dim(BUGNTL_masked_brick)[3]){
-  SpaAut_Rad$Mean_rad <- cellStats(BUGNTL_masked_brick, stat="mean", na.rm=TRUE)
+  SpaAut_Rad$Mean_rad[i] <- cellStats(BUGNTL_masked_brick[[i]], stat="mean", na.rm=TRUE)
 }
 
 #Populate st_dev
 for (i in 1:dim(BUGNTL_masked_brick)[3]){
-  SpaAut_Rad$St_dev <- cellStats(BUGNTL_masked_brick, stat="sd", na.rm=TRUE)
+  SpaAut_Rad$St_dev[i] <- cellStats(BUGNTL_masked_brick[[i]], stat="sd", na.rm=TRUE)
 }
 
 #Populate moranI (closer to 1 the more orderly)
@@ -285,6 +334,7 @@ write.csv(SpaAut_Rad, "BUGNTL_1419.csv")
 write.csv(Multimonth_NTLC, "Delta_BUGNTL_1419.csv")
 BUGNTL_1419 <- read.csv("BUGNTL_1419.csv", header=TRUE, sep=",", dec=".")
 Delta_BUGNTL_1419 <- read.csv("Delta_BUGNTL_1419.csv", header=TRUE, sep=",", dec=".")
+rm(SpaAut_Rad, Multimonth_NTLC)
 
 ##########################################
 #DATA VISUALISATION AND ADVANCED ANALYSIS#
@@ -318,23 +368,26 @@ list.month3 <- list.month3[-54]
 BUGNTL_1419$Month <- list.month3
 
 (ts <- ggplot(BUGNTL_1419)+
-    geom_line(aes(x=Month, y=Mean_rad, color="Red"))+
-    geom_line(aes(x=Month, y=St_dev, color="Green"))+
-    geom_line(aes(x=Month, y=MoranI*30, color="Purple"))+
+    geom_line(aes(x=Month, y=Mean_rad, colour="red"))+
+    geom_line(aes(x=Month, y=St_dev, colour="green"))+
+    geom_line(aes(x=Month, y=MoranI*30, colour="purple"))+
     scale_y_continuous(name="Mean rad & St.dev",
                        sec.axis=sec_axis(~./30, name="Moran's I"))+
     scale_x_date(date_labels="%y %m", date_breaks="4 months")+
     labs(title="Time-series stats of Bulgaria NTL", x="Date", y=" ")+
     theme_economist_white())
 
-#GGPLOT DOESN'T WORK WITH 
+#GGPLOT DOESN'T WORK WITH Date Interval
+as.character(Delta_BUGNTL_1419$Month_range)
+
+#Can't seem to plot the Delta because ggplot does not do month range
 (Delta_ts <- ggplot(Delta_BUGNTL_1419)+
-    geom_line(aes(x=Month_range, y=Delta_Mean, color="Red"))+
-    geom_line(aes(x=Month_range, y=Delta_St.dev, color="Green"))+
-    geom_line(aes(x=Month_range, y=Delta_Moran_I, color="Purple"))+
+    geom_line(aes(x=Month_range, y=Delta_Mean, color="#FF0000"))+
+    geom_line(aes(x=Month_range, y=Delta_St.dev, color="#00FF00"))+
+    geom_line(aes(x=Month_range, y=Delta_Moran_I, color="#FF00FF"))+
     scale_y_continuous(name="Mean rad & St.dev",
                        sec.axis=sec_axis(~./30, name="Delta Moran's I"))+
-    labs(title="Time-series (DELTA) stats of Bulgaria NTL", x="Date range", y=" ")+
+    labs(title="Time-series (Delta) stats of Bulgaria NTL", x="Date range", y=" ")+
     theme_economist_white())
 
 #Timeseries decomposition for each stats
@@ -382,9 +435,41 @@ dev.off()
 #Although no correlation, when examine individually, Mean radiation and St.dev grew steadily generally
 #Moran's I grew till 2017 then into a steep drop off, suggesting NTL to get more organised and then disorganised
 
+#LET'S CHECK IF THE MONTHLY MEAN CORRELATE WITH GDP per capita, PPP[7987]
+wb_cachelist$countries$iso3c
+wbsearch(pattern="GDP per capita", fields=c("indicator"))
+
+BGR_GDP.PPP <- wb("BGR", "NY.GDP.PCAP.PP.CD", startdate="2014", enddate="2019", freq="Y", POSIXct=TRUE)
+
+#Create a dataframe for mean of NTL variables later mutate into BGR_GDP.PPP
+NTL_aggr_mean <- tibble(
+  "Aggr_Mean"=(1:5),
+  "Aggr_St.dev"=(1:5),
+  "Aggr_MoranI"=(1:5)
+)
+
+"2014" <- interval(ymd("2014-01-01"), ymd("2014-12-01"))
+"2015" <- interval(ymd("2015-01-01"), ymd("2015-12-01"))
+"2016" <- interval(ymd("2016-01-01"), ymd("2016-12-01"))
+"2017" <- interval(ymd("2017-01-01"), ymd("2017-12-01"))
+"2018" <- interval(ymd("2018-01-01"), ymd("2018-12-01"))
+
+BUGNTL_1419 %>% 
+  filter(c(Mean_rad, St_dev, MoranI)) %>% 
+           for (i in 1:dim(BUGNTL_1419)[1]){
+             NTL_aggr_mean <- mean(case_when(i %in% "2014"))
+           }
+
 #LET'S TRY THE GLCM, as homogeneity increases, so should correlation
 
 Corr_GLCM <- corLocal(GLCM_Homo, GLCM_Corr, ngb=3, method="spearman", test=TRUE)
 png("Spearman correlation between GLCM Homogeneity and correlation")
 plot(Corr_GLCM)
 dev.off()
+
+#GIFs of GLCM Homo & Corr
+
+gif_GLCM_Homo <- animate(GLCM_Homo, pause=0.25, main="Timeseries of GLCM Homogeneity of Bulgaria NTL", n=1)
+typeof(gif_GLCM_Homo)
+
+gif_GLCM_Corr <- animate(GLCM_Corr, apuse=0.25, main="Timeseries of GLCM Correlation of Bulgaria NTL")

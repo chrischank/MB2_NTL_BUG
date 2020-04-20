@@ -140,26 +140,38 @@ writeOGR(NTL_ROI_BUG,"D:/MB2_DATA", "NTL_ROI_BUG", driver="ESRI Shapefile", over
 #Cropping stacks of ONLY NTL for analysis
 beginCluster()
 BUGNTL_masked_2014 <- mask(BUG_Masked_2014, NTL_ROI_BUG)
+setwd("D:/MB2_DATA/201401_201412/")
+dir.create("Masked")
 setwd("D:/MB2_DATA/201401_201412/Masked")
 writeRaster(BUGNTL_masked_2014, filename=names(BUGNTL_masked_2014), bylayer=TRUE, format="GTiff", datatype="INT2S", overwrite=TRUE)
 
 BUGNTL_masked_2015 <- mask(BUG_Masked_2015, NTL_ROI_BUG)
+setwd("D:/MB2_DATA/201501_201512/")
+dir.create("Masked")
 setwd("D:/MB2_DATA/201501_201512/Masked")
 writeRaster(BUGNTL_masked_2015, filename=names(BUGNTL_masked_2015), bylayer=TRUE, format="GTiff", datatype="INT2S", overwrite=TRUE)
 
 BUGNTL_masked_2016 <- mask(BUG_Masked_2016, NTL_ROI_BUG)
+setwd("D:/MB2_DATA/201601_201612/")
+dir.create("Masked")
 setwd("D:/MB2_DATA/201601_201612/Masked")
 writeRaster(BUGNTL_masked_2016, filename=names(BUGNTL_masked_2016), bylayer=TRUE, format="GTiff", datatype="INT2S", overwrite=TRUE)
 
 BUGNTL_masked_2017 <- mask(BUG_Masked_2017, NTL_ROI_BUG)
+setwd("D:/MB2_DATA/201701_201712/")
+dir.create("Masked")
 setwd("D:/MB2_DATA/201701_201712/Masked")
 writeRaster(BUGNTL_masked_2017, filename=names(BUGNTL_masked_2017), bylayer=TRUE, format="GTiff", datatype="INT2S", overwrite=TRUE)
 
 BUGNTL_masked_2018 <- mask(BUG_Masked_2018, NTL_ROI_BUG)
+setwd("D:/MB2_DATA/201801_201812/")
+dir.create("Masked")
 setwd("D:/MB2_DATA/201801_201812(NA06)/Masked")
 writeRaster(BUGNTL_masked_2018, filename=names(BUGNTL_masked_2018), bylayer=TRUE, format="GTiff", datatype="INT2S", overwrite=TRUE)
 
 BUGNTL_masked_2019 <- mask(BUG_Masked_2019, NTL_ROI_BUG)
+setwd("D:/MB2_DATA/201901_201904/")
+dir.create("Masked")
 setwd("D:/MB2_DATA/201901_201904/Masked")
 writeRaster(BUGNTL_masked_2019, filename=names(BUGNTL_masked_2019), bylayer=TRUE, format="GTiff", datatype="INT2S", overwrite=TRUE)
 endCluster()
@@ -435,13 +447,9 @@ dev.off()
 #Although no correlation, when examine individually, Mean radiation and St.dev grew steadily generally
 #Moran's I grew till 2017 then into a steep drop off, suggesting NTL to get more organised and then disorganised
 
-#LET'S CHECK IF THE MONTHLY MEAN CORRELATE WITH GDP per capita, PPP[7987]
-wb_cachelist$countries$iso3c
-wbsearch(pattern="GDP per capita", fields=c("indicator"))
-
-BGR_GDP.PPP <- wb("BGR", "NY.GDP.PCAP.PP.CD", startdate="2014", enddate="2019", freq="Y", POSIXct=TRUE)
 
 #Create a dataframe for mean of NTL variables later mutate into BGR_GDP.PPP
+#COMPLETE IF I HAVE TIME
 NTL_aggr_mean <- tibble(
   "Aggr_Mean"=(1:5),
   "Aggr_St.dev"=(1:5),
@@ -457,8 +465,10 @@ NTL_aggr_mean <- tibble(
 BUGNTL_1419 %>% 
   filter(c(Mean_rad, St_dev, MoranI)) %>% 
            for (i in 1:dim(BUGNTL_1419)[1]){
-             NTL_aggr_mean <- mean(case_when(i %in% "2014"))
+             NTL_aggr_mean <- ifelse(i %in% ymd("2014-01-01")%within%ymd("2014-12-01"), mean(), NA)
            }
+
+mean(BUGNTL_1419$Mean_rad)
 
 #LET'S TRY THE GLCM, as homogeneity increases, so should correlation
 
@@ -466,10 +476,3 @@ Corr_GLCM <- corLocal(GLCM_Homo, GLCM_Corr, ngb=3, method="spearman", test=TRUE)
 png("Spearman correlation between GLCM Homogeneity and correlation")
 plot(Corr_GLCM)
 dev.off()
-
-#GIFs of GLCM Homo & Corr
-
-gif_GLCM_Homo <- animate(GLCM_Homo, pause=0.25, main="Timeseries of GLCM Homogeneity of Bulgaria NTL", n=1)
-typeof(gif_GLCM_Homo)
-
-gif_GLCM_Corr <- animate(GLCM_Corr, apuse=0.25, main="Timeseries of GLCM Correlation of Bulgaria NTL")

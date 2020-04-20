@@ -447,29 +447,6 @@ dev.off()
 #Although no correlation, when examine individually, Mean radiation and St.dev grew steadily generally
 #Moran's I grew till 2017 then into a steep drop off, suggesting NTL to get more organised and then disorganised
 
-
-#Create a dataframe for mean of NTL variables later mutate into BGR_GDP.PPP
-#COMPLETE IF I HAVE TIME
-NTL_aggr_mean <- tibble(
-  "Aggr_Mean"=(1:5),
-  "Aggr_St.dev"=(1:5),
-  "Aggr_MoranI"=(1:5)
-)
-
-"2014" <- interval(ymd("2014-01-01"), ymd("2014-12-01"))
-"2015" <- interval(ymd("2015-01-01"), ymd("2015-12-01"))
-"2016" <- interval(ymd("2016-01-01"), ymd("2016-12-01"))
-"2017" <- interval(ymd("2017-01-01"), ymd("2017-12-01"))
-"2018" <- interval(ymd("2018-01-01"), ymd("2018-12-01"))
-
-BUGNTL_1419 %>% 
-  filter(c(Mean_rad, St_dev, MoranI)) %>% 
-           for (i in 1:dim(BUGNTL_1419)[1]){
-             NTL_aggr_mean <- ifelse(i %in% ymd("2014-01-01")%within%ymd("2014-12-01"), mean(), NA)
-           }
-
-mean(BUGNTL_1419$Mean_rad)
-
 #LET'S TRY THE GLCM, as homogeneity increases, so should correlation
 
 Corr_GLCM <- corLocal(GLCM_Homo, GLCM_Corr, ngb=3, method="spearman", test=TRUE)
